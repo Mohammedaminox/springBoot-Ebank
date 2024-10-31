@@ -2,15 +2,15 @@ package com.banque.ebankify.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "loans")
-@Data
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Loan {
 
     @Id
@@ -19,21 +19,25 @@ public class Loan {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private User borrower;
 
     @Column(nullable = false)
     private BigDecimal amount;
 
     @Column(nullable = false)
-    private LocalDate applicationDate;
+    private int termInMonths;
 
     @Column(nullable = false)
-    private LoanStatus status;
+    private BigDecimal interestRate;
 
     @Column(nullable = false)
-    private int durationMonths;
-}
+    private LocalDate startDate;
 
-enum LoanStatus {
-    PENDING, APPROVED, REJECTED
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Status status;
+
+    public enum Status {
+        PENDING_APPROVAL, APPROVED, REJECTED
+    }
 }

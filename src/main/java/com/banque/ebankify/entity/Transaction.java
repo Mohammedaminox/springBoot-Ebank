@@ -2,15 +2,15 @@ package com.banque.ebankify.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions")
-@Data
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Transaction {
 
     @Id
@@ -18,32 +18,24 @@ public class Transaction {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "source_account_id", nullable = false)
-    private BankAccount sourceAccount;
+    @JoinColumn(name = "from_account_id", nullable = false)
+    private BankAccount fromAccount;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "destination_account_id", nullable = true)
-    private BankAccount destinationAccount;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TransactionType type;
+    @JoinColumn(name = "to_account_id")
+    private BankAccount toAccount;
 
     @Column(nullable = false)
     private BigDecimal amount;
 
-    @Column(nullable = false)
-    private LocalDateTime dateTime;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TransactionStatus status;
-}
+    private Type type;
 
-enum TransactionType {
-    CLASSIC, INSTANT, PERMANENT
-}
+    @Column(nullable = false)
+    private LocalDateTime transactionDate = LocalDateTime.now();
 
-enum TransactionStatus {
-    PENDING, APPROVED, REJECTED
+    public enum Type {
+        STANDARD, INSTANT, RECURRING
+    }
 }
