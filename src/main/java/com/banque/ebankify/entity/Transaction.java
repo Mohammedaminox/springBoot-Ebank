@@ -35,6 +35,9 @@ public class Transaction {
     @Column(nullable = false)
     private LocalDateTime transactionDate = LocalDateTime.now();
 
+    public void setRequiresApproval(boolean b) {
+    }
+
     public enum Type {
         STANDARD, INSTANT, RECURRING
     }
