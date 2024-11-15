@@ -4,9 +4,9 @@ import com.banque.ebankify.dto.request.UserRequestDTO;
 import com.banque.ebankify.dto.response.UserResponseDTO;
 import com.banque.ebankify.entity.User;
 import com.banque.ebankify.repository.UserRepository;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,18 +15,21 @@ import java.util.stream.Collectors;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
+    }
+
+    // Hash password using BCrypt
+    private String hashPassword(String password) {
+        return BCrypt.hashpw(password, BCrypt.gensalt());
     }
 
     @Transactional
     public UserResponseDTO createUser(UserRequestDTO userRequestDTO) {
         User user = new User();
         user.setUsername(userRequestDTO.getUsername());
-        user.setPassword(passwordEncoder.encode(userRequestDTO.getPassword())); // Encrypt password
+        user.setPassword(hashPassword(userRequestDTO.getPassword())); // Encrypt password using BCrypt
         user.setRole(User.Role.USER); // Default role
         user.setEmail(userRequestDTO.getEmail());
         userRepository.save(user);
@@ -53,7 +56,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setUsername(userRequestDTO.getUsername());
-        user.setPassword(passwordEncoder.encode(userRequestDTO.getPassword()));
+        user.setPassword(hashPassword(userRequestDTO.getPassword())); // Update with encrypted password
         userRepository.save(user);
         return new UserResponseDTO(user);
     }
