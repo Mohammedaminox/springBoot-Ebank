@@ -1,12 +1,13 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/ebankify
-    username: postgres
+    username : postgres
+    url : jdbc:postgresql://localhost:5432/ebankify
     password: AMINOX1999
     driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: none # Disable Hibernate's auto DDL for Liquibase to manage schema changes
   liquibase:
-    enabled: true # Enable Liquibase migrations
-    change-log: classpath:db/changelog/master.xml # Corrected path (no leading slash)
+    change-log: classpath:db/master.yml
+  jpa:
+    database: postgresql
+
+
+
