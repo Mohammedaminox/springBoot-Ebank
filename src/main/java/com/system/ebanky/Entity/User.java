@@ -1,12 +1,10 @@
 package com.system.ebanky.Entity;
 
 import com.system.ebanky.Entity.Enums.Role;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
@@ -29,17 +27,18 @@ public class User implements UserDetails {
     private String password;
     private int age;
     private int creditScore;
+    @Enumerated(EnumType.STRING)
     private Role role;
     private double monthly_income;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return email;
     }
 
     @Override
@@ -60,5 +59,10 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
     }
 }
