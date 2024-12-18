@@ -2,39 +2,49 @@ package com.system.ebanky.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
+
+    private final JwtFilter jwtFilter;
+
+    public SecurityConfig(JwtFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                // Désactive CSRF pour simplifier les tests avec Postman (optionnel)
-                .csrf().disable()
-
-                // Autorisations basées sur les rôles
+        http.csrf(csrf -> csrf.disable()) // Disable CSRF
                 .authorizeHttpRequests(auth -> auth
-                        .antMatchers("/admin/**").hasRole("ADMIN")
-                        .antMatchers("/employee/**").hasRole("EMPLOYEE")
-                        .antMatchers("/user/**").hasRole("USER")
+                        .requestMatchers("/api/login").permitAll()
+                        .requestMatchers("/getRole").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/accounts/**").hasRole("EMPLOYEE")
+                        .requestMatchers("/api/transaction/approve/{id}").hasRole("EMPLOYEE")
+                        .requestMatchers(HttpMethod.GET, "/api/users/{userId}").hasRole("EMPLOYEE")
+                        .requestMatchers("/api/transaction").hasRole("USER")
+                        .requestMatchers("/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-
-                // Basic Auth pour l'ADMIN
-                .httpBasic()
-
-                // JWT pour USER et EMPLOYEE
-                .and()
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Stateless pour JWT
-                );
+                // Add JWT filter before processing authentication request
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                // Ensure session is stateless
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .httpBasic(Customizer.withDefaults()); // Use the updated method
 
         return http.build();
     }
@@ -43,6 +53,25 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        // Define in-memory users for simplicity
+        UserDetails admin = User.withUsername("admin")
+                .password(passwordEncoder().encode("admin123"))
+                .roles("ADMIN")
+                .build();
+
+        UserDetails user = User.withUsername("user")
+                .password(passwordEncoder().encode("user123"))
+                .roles("USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(user, admin);
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
 }
-
-

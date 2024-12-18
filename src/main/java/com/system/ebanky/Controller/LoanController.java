@@ -8,6 +8,7 @@ import com.system.ebanky.Service.UserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -54,19 +55,12 @@ private final UserService userService;
         }
     }
     @GetMapping("/approve/{id}")
-    public ResponseEntity<?> approveLoan(@PathVariable long id,@RequestBody RoleDTO role){
-        try{
-
-            if (!Role.ADMIN.toString().equals(role.getRole().toString())){
-                throw new RuntimeException("you does not have the access to approve this loan as a "+role.getRole());
-            }else {
-                loanService.approveLoan(id);
-                return ResponseEntity.ok("the loan has been approved");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
-        }
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> approveLoan(@PathVariable long id) {
+        loanService.approveLoan(id);
+        return ResponseEntity.ok("Loan approved successfully.");
     }
+
     @GetMapping("/decline/{id}")
     public ResponseEntity<?> declineLoan(@PathVariable long id,@RequestBody RoleDTO role){
         try{

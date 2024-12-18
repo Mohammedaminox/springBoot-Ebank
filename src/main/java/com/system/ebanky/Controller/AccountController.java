@@ -1,9 +1,12 @@
 package com.system.ebanky.Controller;
 
 import com.system.ebanky.DTO.AccountDTO;
+import com.system.ebanky.Exception.NotFoundException;
 import com.system.ebanky.Service.AccountService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,55 +20,45 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    // Create a new account
     @PostMapping("/")
-    public ResponseEntity<?> createAccount(@RequestBody AccountDTO accountDTO) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createAccount(@Valid @RequestBody AccountDTO accountDTO) {
         try {
             AccountDTO createdAccount = accountService.createAccount(accountDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdAccount);
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Account creation failed: " + e.getMessage());
         }
-
     }
 
-    // Retrieve an account by ID
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<AccountDTO> getAccount(@PathVariable Long id) {
-        AccountDTO account = accountService.getAccountById(id);
-        if (account != null) {
+        try {
+            AccountDTO account = accountService.getAccountById(id);
             return ResponseEntity.ok(account);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (NotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
     }
 
-    // Retrieve all accounts
     @GetMapping("/")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<AccountDTO>> getAllAccounts() {
-        List<AccountDTO> accounts = accountService.getAllAccounts();
-        return ResponseEntity.ok(accounts);
+        return ResponseEntity.ok(accountService.getAllAccounts());
     }
 
-    // Update an account
     @PutMapping("/{id}")
-    public ResponseEntity<AccountDTO> updateAccount(@PathVariable Long id, @RequestBody AccountDTO accountDTO) {
-        AccountDTO updatedAccount = accountService.updateAccount(id, accountDTO);
-        if (updatedAccount != null) {
-            return ResponseEntity.ok(updatedAccount);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AccountDTO> updateAccount(@PathVariable Long id, @Valid @RequestBody AccountDTO accountDTO) {
+        return ResponseEntity.ok(accountService.updateAccount(id, accountDTO));
     }
 
-    // Delete an account
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteAccount(@PathVariable Long id) {
-        boolean isDeleted = accountService.deleteAccount(id);
-        if (isDeleted) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
+        accountService.deleteAccount(id);
+        return ResponseEntity.noContent().build();
     }
 }
+
